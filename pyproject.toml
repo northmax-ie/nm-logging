@@ -1,0 +1,55 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "nm-logging"
+version = "0.1.0"
+description = "Structured operational and audit logging for NorthMax applications."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "NorthMax Integration Ltd" }]
+keywords = ["logging", "audit", "structured-logging", "jsonl"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: System :: Logging",
+    "Typing :: Typed",
+]
+# No runtime dependencies, deliberately and permanently: a logging package that
+# can fail to import is a bad logging package. The zero-dependency CI job holds
+# this to account.
+dependencies = []
+
+[project.urls]
+Repository = "https://github.com/northmax-ie/nm-logging"
+Issues = "https://github.com/northmax-ie/nm-logging/issues"
+Documentation = "https://github.com/northmax-ie/nm-logging/tree/main/docs"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nm_logging"]
+# Ship the PEP 561 marker so type checkers consume the annotations.
+artifacts = ["src/nm_logging/py.typed"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/tests",
+    "/docs",
+    "/README.md",
+    "/LICENSE",
+    "/pyproject.toml",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

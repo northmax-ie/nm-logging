@@ -1,0 +1,76 @@
+name: release
+
+# Publish to PyPI when a version tag is pushed. Uses PyPI Trusted Publishing
+# (OIDC): no API token is stored in the repository. The trusted publisher must
+# be configured once on PyPI — project nm-logging, owner northmax-ie, workflow
+# release.yml, environment pypi — before the first tag will publish.
+#
+# Cut a release by tagging a commit whose pyproject version already matches:
+#   git tag v0.1.0 && git push origin v0.1.0
+# The version guard below refuses a tag that does not match the packaged
+# version, so a mistyped tag fails before anything is uploaded.
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    name: build and verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Guard — tag matches packaged version
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          pkg="$(python -c 'import tomllib; print(tomllib.load(open("pyproject.toml","rb"))["project"]["version"])')"
+          if [ "$tag" != "$pkg" ]; then
+            echo "tag $GITHUB_REF_NAME does not match pyproject version $pkg" >&2
+            exit 1
+          fi
+          echo "releasing version $pkg"
+
+      # Gate the release on the test suite. ci.yml also runs on the tag push,
+      # but it is a separate workflow that publish does not wait on, so a tag on
+      # a red commit could otherwise still reach PyPI. Run the tests here so a
+      # broken build cannot be published.
+      - run: pip install -e ".[dev]"
+      - run: pytest -q
+
+      - run: python -m pip install --upgrade pip build twine
+      - run: python -m build
+      # twine check validates the long-description PyPI will render, catching a
+      # broken README before the upload rather than after.
+      - run: python -m twine check dist/*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    name: publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    # A GitHub environment named pypi — the same name the trusted publisher is
+    # registered under. Add required reviewers to it in repo settings if a
+    # manual approval gate before publish is wanted.
+    environment: pypi
+    permissions:
+      # Mint the short-lived OIDC token Trusted Publishing exchanges for upload
+      # credentials. This is the only permission the publish step needs.
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      # Pinned to a commit SHA rather than a floating tag, so the published
+      # action cannot change under us between releases. This is v1.14.2; bump
+      # the SHA and the comment together when updating.
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33

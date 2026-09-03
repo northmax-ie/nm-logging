@@ -1,0 +1,24 @@
+title = "nm-logging gitleaks config"
+
+# The test suite needs fixed, recognisable sensitive-looking strings to prove
+# that secret material never survives into a record, a fallback line, an
+# exception message, a traceback, or caplog. Those strings live in
+# tests/synthetic_sensitive_material.py and are entirely synthetic; none has ever
+# been a real credential.
+#
+# The exemption below is deliberately narrow: it matches the exact synthetic
+# strings only, NOT the file path. Every file, including the fixture, stays
+# scanned for any other secret. Do not replace this with a `paths` allowlist,
+# which would disable scanning for a whole file.
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Synthetic nm-logging test material, not real secrets."
+regexTarget = "match"
+regexes = [
+    '''NMLOG_SYNTHETIC_MARKER_do_not_leak_1a2b3c''',
+    '''ENC\[v1:aes256gcm:gen2:c3ludGhldGljLW5vdC1yZWFs\]''',
+    '''Bearer nmlog-synthetic-not-a-real-token-000000''',
+]
