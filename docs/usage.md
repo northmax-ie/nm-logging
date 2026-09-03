@@ -2,7 +2,7 @@
 
 A short tour of the v0.1 API. `docs/logging-standard.md` is normative; this file
 shows how the package expresses it. Every example event here is invented — the
-package holds no application's event catalogue (§21).
+package holds no application's event catalogue.
 
 Import by symbol. Never alias the package to `logging`:
 
@@ -60,7 +60,7 @@ registry.register(EventSchema(
 Field values are limited to `str`, `int`, `float`, `bool` (and, where a schema
 declares `is_list=True`, a list of those). A string that looks like an encrypted
 envelope (`ENC[...]`) is refused, and free-form text fields are denied unless a
-schema explicitly permits them (§11, §12).
+schema explicitly permits them.
 
 ## Operational logging (fails open)
 
@@ -77,7 +77,7 @@ match the event's pinned severity. `application`, `emitter`, `schema_version`,
 and the timestamp are set by the library, never at the call site.
 
 If a sink write fails, the call still returns: logging degrades observably rather
-than failing the operation it describes (§14.1). Poll health to surface it:
+than failing the operation it describes. Poll health to surface it:
 
 ```python
 if log.health.degraded:
@@ -88,12 +88,12 @@ A malformed logging call (unknown event, wrong field, wrong severity) is a
 programming defect. In production it is contained — a package-owned defect record
 is written naming the event and the violation, never the offending values — and
 the call returns. Construct with `strict=True` in development and tests to have
-those defects raise instead (§14.4).
+those defects raise instead.
 
 ## Audit logging (fails hard)
 
 Audit records who did what, with what outcome, and it fails hard: if durable
-intent cannot be recorded, the mutation must not proceed (§9.3).
+intent cannot be recorded, the mutation must not proceed.
 
 ### Intent / outcome — the handle form
 
@@ -118,7 +118,7 @@ the intent's required fields — it is linked by an internally generated
 `operation_id` — but must carry any field marked `required_on_outcome`. A failure
 to append the outcome raises and leaves the intent orphaned for reconciliation;
 it does not retract a mutation that may already have happened, and no outcome is
-ever fabricated (§9.3).
+ever fabricated.
 
 ### Intent / outcome — the context-manager form
 
@@ -178,18 +178,17 @@ except AuditFinalisationError as exc:
 ```
 
 `actor` must be a real accountable identity: empty, whitespace, the placeholders
-`system` / `none` / `null` / `-`, and an `ENC[...]` envelope form are all rejected
-(§6, §11).
+`system` / `none` / `null` / `-`, and an `ENC[...]` envelope form are all rejected.
 
 `complete()` (a single atomic state-plus-audit record) requires a backend that
 can commit both in one transaction. The v0.1 file backend cannot, so it raises;
-use intent/outcome (§9.2, §22).
+use intent/outcome.
 
 ## Reading records back
 
 Application UI and export code read through the reader, not the file layout, so
 the backend can change without touching them. The concrete reader lives outside
-the top-level surface because nothing write-side may depend on it (§22):
+the top-level surface because nothing write-side may depend on it:
 
 ```python
 from nm_logging.reader.jsonl import JsonlReader
@@ -204,7 +203,7 @@ if reader.truncated:
 
 A torn final line is tolerated and reported via `truncated`; a corrupt (fully
 framed but unparseable) line raises `ReaderError`. The reader never repairs or
-rewrites the file — audit is append-only from the application's perspective (§15).
+rewrites the file — audit is append-only from the application's perspective.
 
 ## Containing third-party logging
 
@@ -220,11 +219,11 @@ install()  # foreign WARNING/ERROR -> stderr for platform capture; below that, d
 ```
 
 This governs only nm-logging's own boundary. It cannot stop a consuming
-application from configuring Python logging however it likes (§25).
+application from configuring Python logging however it likes.
 
 ## Not in v0.1 — and where each attaches
 
-These are deliberately absent, not stubbed (§24, §26). Because the record
+These are deliberately absent, not stubbed. Because the record
 contract and the facades are storage-independent, each attaches without changing
 what events mean:
 
@@ -239,4 +238,4 @@ what events mean:
 - **UI filtering and pagination** — the reader layer, above today's iteration.
 - **The lifecycle wrapper** (unexpected-exit / restart evidence) — a separate
   producer emitting under `emitter="wrapper"`; the application never reports its
-  own death (§13.2).
+  own death.

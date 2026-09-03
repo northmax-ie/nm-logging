@@ -4,11 +4,11 @@
 
 This document defines the working baseline for how NorthMax applications log.
 
-The design is being developed initially through NorthMax Enclave, but it is
+The design is being developed initially through a NorthMax application, but it is
 intentionally application-independent. The same principles must remain usable
 for:
 
-- full interactive applications such as Enclave;
+- full interactive applications such as exampleapp;
 - autonomous/background services;
 - scheduled workers;
 - applications using shared NorthMax application frameworks;
@@ -64,7 +64,7 @@ Examples:
 ```
 INFO update run completed eligible=5 updated=5
 INFO reconciliation completed processed=1842 changed=17
-INFO CUCM connectivity restored
+INFO upstream service connectivity restored
 ```
 
 An event qualifying as INFO does not automatically mean it must be emitted. Very
@@ -91,8 +91,8 @@ whole remains meaningfully operational.
 Examples:
 
 ```
-ERROR CUCM connectivity lost
-ERROR IPTrade integration unavailable
+ERROR upstream service connectivity lost
+ERROR external integration unavailable
 ERROR scheduled operation aborted due to unexpected exception
 ```
 
@@ -204,9 +204,9 @@ Example:
 ```
 actor=alice
 event=user.created
-target=ChatGPT
+target=user-42
 extension=6666
-phone_model=Cisco8852
+phone_model=model-x
 ```
 
 The important question is:
@@ -222,7 +222,7 @@ If no, operational logging is sufficient.
 
 This distinction is a central part of the NorthMax logging model.
 
-An autonomous service such as AutoUpdate exists specifically to discover and
+An autonomous updater exists specifically to discover and
 update devices.
 
 Therefore:
@@ -241,8 +241,8 @@ ACTIVITY actor=system ...
 
 provides no useful accountability and is therefore unnecessary.
 
-Conversely, Enclave does not independently decide to create a user. If alice
-instructs Enclave to create a user, attribution materially matters.
+Conversely, exampleapp does not independently decide to create a user. If alice
+instructs exampleapp to create a user, attribution materially matters.
 
 Therefore that is ACTIVITY audit.
 
@@ -304,7 +304,7 @@ For example:
 
 ```
 ACTIVITY actor=alice event=user.delete outcome=failure
-ERROR CUCM user deletion failed ...
+ERROR upstream service user deletion failed ...
 ```
 
 The audit record answers:
@@ -371,7 +371,7 @@ This applies regardless of why atomicity is unavailable.
 
 Examples include:
 
-- mutation of an external system such as CUCM;
+- mutation of an external system such as an upstream service;
 - local application state stored separately from append-oriented audit files;
 - any other backend combination that cannot guarantee a single atomic commit.
 
@@ -742,7 +742,7 @@ Example:
 ```
 schema_version=1
 timestamp=...
-application=autoupdate
+application=exampleapp
 emitter=app
 event=update.run.completed
 severity=INFO
@@ -838,23 +838,23 @@ permitted by the event definition.
 
 NorthMax applications own their own event namespace.
 
-For example, Enclave may define events such as:
+For example, exampleapp may define events such as:
 
 ```
-iptrade.connectivity.lost
-cucm.connectivity.restored
+upstream.connectivity.lost
+external.connectivity.restored
 user.created
 ```
 
-AutoUpdate may independently define:
+An autonomous updater may independently define:
 
 ```
 update.run.completed
 device.update.blocked
 ```
 
-The NorthMax logging package does not need knowledge of IPTrade, CUCM, device
-updates or other application-specific concepts.
+The NorthMax logging package does not need knowledge of upstream integrations,
+external systems, device updates or other application-specific concepts.
 
 The library accepts consumer-defined event identifiers subject to common syntax
 and structural rules.

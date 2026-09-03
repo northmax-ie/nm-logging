@@ -2,7 +2,15 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
   test:
@@ -78,6 +86,11 @@ jobs:
           # Full history
           fetch-depth: 0
       - name: gitleaks
+        # Pinned by digest so the scanner image cannot change under us. The tag
+        # is kept for readability; the digest is authoritative. This is v8.21.2;
+        # bump the tag and the digest together when updating.
         run: |
-          docker run --rm -v "$PWD:/repo" ghcr.io/gitleaks/gitleaks:v8.21.2 \
+          docker run --rm -v "$PWD:/repo" \
+            ghcr.io/gitleaks/gitleaks:v8.21.2@sha256:0e99e8821643ea5b235718642b93bb32486af9c8162c8b8731f7cbdc951a7f46 \
             detect --source /repo --config /repo/.gitleaks.toml --redact --verbose
+  

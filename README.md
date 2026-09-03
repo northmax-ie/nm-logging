@@ -4,12 +4,12 @@ Structured operational and audit logging for NorthMax applications.
 
 `nm-logging` owns three things: the record contract, the enforcement of that
 contract, and the persistence interface. It does not own any application's event
-catalogue — applications declare their own events against it.
+catalogue - applications declare their own events against it.
 
-It has **no required runtime dependencies**, and the core never will — it imports
-on the standard library alone, because a logging package that can fail to import
-is a bad logging package. An optional backend (a database sink, say) would arrive
-as an opt-in extra that a default `pip install nm-logging` never pulls.
+The core has no required runtime dependencies and imports on the standard library
+alone, because a logging package that can fail to import is a bad logging package.
+An optional backend (a database sink, say) would arrive as an opt-in extra that a
+default `pip install nm-logging` never pulls.
 
 ## Install
 
@@ -22,7 +22,7 @@ Requires Python 3.11+. The package ships type information (`py.typed`).
 ## Quick start
 
 Events are an allowlist. Each schema declares its fields and their types up
-front, so a malformed call is caught at registration, not at 3 a.m.
+front, so a malformed schema is caught at registration, not at 3 a.m.
 
 ```python
 from nm_logging import (
@@ -46,8 +46,14 @@ Audit logging records who did what, with what outcome, and links intent to
 outcome through an internally generated id:
 
 ```python
-from nm_logging import AuditLog
+from nm_logging import AuditLog, Category
 from nm_logging.sinks.jsonl_audit import JsonlAuditSink
+
+registry.register(EventSchema(
+    "config.changed",
+    category=Category.ADMIN,
+    fields=(FieldSpec("setting", str, required=True),),
+))
 
 audit = AuditLog("exampleapp", registry, JsonlAuditSink("/var/log/exampleapp/audit.jsonl"))
 
@@ -56,11 +62,7 @@ with audit.operation("config.changed", actor="alice", setting="retention_days") 
     op.success()
 ```
 
-See [docs/usage.md](docs/usage.md) for the full tour — audit outcomes and
-reconciliation, health and fail-open behaviour, reading records back, and
-containing third-party logging.
-
-## What makes it strict
+## Guarantees
 
 The rules below are enforced, not advisory. Each exists because a log that can
 be wrong or can leak is worse than no log.
@@ -80,10 +82,15 @@ be wrong or can leak is worse than no log.
   cannot proceed unless durable intent was recorded first, and outcomes are never
   fabricated.
 - **Audit records are append-only.** No edit, no per-record delete, no history
-  clearing — retention is the only removal mechanism.
+  clearing - retention is the only removal mechanism.
 
-`docs/logging-standard.md` is the normative source; where it and any code or doc
-disagree, the standard wins.
+## Documentation
+
+- [docs/usage.md](docs/usage.md) - how to consume the library
+- [docs/logging-standard.md](docs/logging-standard.md) - normative logging contract
+
+`docs/logging-standard.md` is normative. Any implementation or documentation that
+diverges from it is defective.
 
 ## Development
 
@@ -94,4 +101,4 @@ pytest -q
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT - see [LICENSE](LICENSE).
