@@ -1,22 +1,23 @@
 title = "nm-logging gitleaks config"
 
-# The test suite needs fixed, recognisable sensitive-looking strings to prove
-# that secret material never survives into a record, a fallback line, an
-# exception message, a traceback, or caplog. Those strings live in
-# tests/synthetic_sensitive_material.py and are entirely synthetic; none has ever
-# been a real credential.
+# The test suite needs fixed, recognisable synthetic strings to prove that secret
+# material never survives into an emitted record, a fallback line, an exception
+# message, or a traceback. The values live in tests/synthetic_sensitive_material.py
+# and have never been real credentials.
 #
-# The exemption below is deliberately narrow: it matches the exact synthetic
-# strings only, NOT the file path. Every file, including the fixture, stays
-# scanned for any other secret. Do not replace this with a `paths` allowlist,
-# which would disable scanning for a whole file.
+# The exemption is deliberately narrow: it matches the exact synthetic strings
+# only, NOT the file path. Every file, including the fixture, stays scanned for
+# any other secret. Do not replace this with a `paths` allowlist, which would
+# disable scanning for a whole file.
+#
+# Use the singular [allowlist] table, not [[allowlists]]: gitleaks does not apply
+# a top-level [[allowlists]] block when [extend].useDefault = true.
 
 [extend]
 useDefault = true
 
-[[allowlists]]
-description = "Synthetic nm-logging test material, not real secrets."
-regexTarget = "match"
+[allowlist]
+description = "Synthetic nm-logging test material, not a real secret."
 regexes = [
     '''NMLOG_SYNTHETIC_MARKER_do_not_leak_1a2b3c''',
     '''ENC\[v1:aes256gcm:gen2:c3ludGhldGljLW5vdC1yZWFs\]''',
