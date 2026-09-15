@@ -126,11 +126,15 @@ def test_timestamp_is_mandatory_at_the_record_layer():
 
 @pytest.mark.parametrize(
     "bad_application",
-    ["", "Enclave", "1app", "app-name", "app.name", "app name", "x" * 65],
+    ["", "Enclave", "1app", "app.name", "app name", "-app", "x" * 65],
 )
 def test_bad_application_id_rejected(bad_application):
     with pytest.raises(LoggingConfigurationError):
         make_operational(application=bad_application)
+
+@pytest.mark.parametrize("good_application", ["nm-enclave", "app_name", "a", "x" * 64])
+def test_hyphenated_application_id_accepted(good_application):
+    assert make_operational(application=good_application).application == good_application
 
 
 def test_application_rejection_does_not_echo_the_value():
