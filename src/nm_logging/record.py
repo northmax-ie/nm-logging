@@ -113,7 +113,7 @@ def looks_like_enc_envelope(value: str) -> bool:
 
 # fullmatch, not match: with match a trailing "\n" would slip past the anchor
 # and admit "myapp\n" as an application id; every frozen grammar here anchors alike.
-_APPLICATION_RE = re.compile(r"[a-z][a-z0-9_]{0,63}")
+_APPLICATION_RE = re.compile(r"[a-z][a-z0-9_-]{0,63}")
 
 # The event-ID grammar (§21), owned here so record construction can enforce it as
 # a structural backstop and events.py can reuse the one definition for schema
@@ -132,7 +132,7 @@ def _validate_application(application: str) -> None:
         # The value is not echoed: a rejected application id is untrusted,
         # potentially unbounded input and must not reach a message or logs.
         raise LoggingConfigurationError(
-            "application id must match [a-z][a-z0-9_]{0,63}"
+            "application id must match [a-z][a-z0-9_-]{0,63}"
         ) from None
 
 
